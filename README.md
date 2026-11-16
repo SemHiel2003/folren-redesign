@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Folren — redesign-demo voor Kevin
 
-## Getting Started
+Nieuw ontwerp van [folrenstudio.com](https://folrenstudio.com/), de site van Kevin (maker van Folren).
 
-First, run the development server:
+**Live:** https://kevin.hiel.digital (sinds 16 november 2026, noindex)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Let op bij de inhoud
+
+- Alle teksten, prijzen, beelden en video's komen van folrenstudio.com, stand 16 november 2026. Verandert Kevin daar iets (bijvoorbeeld de Black Friday-actie), dan moet het hier ook: de teksten staan in `src/lib/content.ts`.
+- Privacy en Terms zijn één-op-één overgenomen in `src/content/legal.ts`.
+- Er is geen inlogpagina nagebouwd. "Log in" verwijst naar `https://folrenstudio.com/login/`; "Join on Skool" naar de Skool-groep van Folren.
+- De demo "Watch a Short get made" is een vereenvoudigde versie van de animatie op de huidige site, met dezelfde echte gegevens (script, shots, staptijden).
+- In de footer staat "Redesign concept by Hiel Digital".
+
+## Techniek
+
+- Next.js 16 (App Router) als **statische export** (`output: "export"`), Tailwind CSS 4, Motion, Radix Accordion, lucide-react.
+- Lettertypen: Geist en Geist Mono. Kleuren staan als variabelen bovenaan `src/app/globals.css`.
+- Pagina's: `/`, `/pricing/`, `/privacy/`, `/terms/` en een 404.
+
+### 21st.dev-onderdelen
+
+Opgehaald via 21st.dev en aangepast aan de huisstijl:
+
+- **Header 1** (efferd): sticky header met blur en mobiel menu → `components/site/header.tsx`
+- **Text Cycle** (wensity): wisselende woorden in de hero → `components/ui/text-cycle.tsx`
+- **Feature Grid Spotlight Cards** (Hirael): kaarten met muisgloed en maatkruisjes → `components/site/spotlight-card.tsx`
+- **Single Plan Pricing Card** (ln-dev7) met **Border Beam** (Magic UI) → prijskaart in `components/site/sections.tsx`
+- **FAQ Two Column** (Hirael) → FAQ in `components/site/sections.tsx`
+
+## Lokaal
+
+```sh
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # schrijft de statische site naar out/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploy (Hiel Digital hosting)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Server:** Hetzner, SSH-host `hetzner-hosting`, CloudPanel en nginx. Site-gebruiker `kevin`, map `/home/kevin/htdocs/kevin.hiel.digital/`.
+- **DNS:** Cloudflare, proxied A-record `kevin` naar de server (token in `~/.config/cloudflare/hiel-digital-token`).
+- **Certificaat:** Let's Encrypt via `clpctl lets-encrypt:install:certificate --domainName=kevin.hiel.digital`.
+- **nginx:** de vhost heeft `X-Robots-Tag: noindex, nofollow`, `Cache-Control: no-cache` op HTML, een jaar cache op `/_next/static/` (bestandsnamen met hash), één uur op overige media, `try_files` en `error_page 404 /404.html`. De oorspronkelijke vhost staat in `/root/kevin.hiel.digital.conf.orig`. Het SFTP-wachtwoord is niet opgeslagen.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Update uitrollen
 
-## Learn More
+```sh
+npm run build
+COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs -czf - -C out . | ssh hetzner-hosting \
+  'R=/home/kevin/htdocs/kevin.hiel.digital; rm -rf $R/* && tar -xzf - -C $R && chown -R kevin:kevin $R'
+```
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Beelden en video's in `public/media/` houden dezelfde naam; Cloudflare en browsers bewaren die tot een uur.
